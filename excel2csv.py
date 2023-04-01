@@ -2,6 +2,7 @@ import re
 import sys
 import os
 import openpyxl
+import shutil
 
 DELIMITER_STR = ","
 LINE_STR = "\n"
@@ -21,6 +22,7 @@ class DataTable:
         self.infoRow = -1
         self.startRow = -1
         self.endRow = -1
+        self.isEnum = name == "Enum"
 
     def add_field(self,field):
         '''
@@ -70,6 +72,40 @@ class DataRecord:
         elif type(v) is str:
             return '"' + v + '"'
         return str(v)
+
+class DataEnum:
+    '''
+    Enumのデータ構造情報
+    '''
+    def __init__(self, type, type_comment, size):
+        self.type = type
+        self.type_comment = type_comment
+        if self.type_comment == None or self.type_comment == "":
+            self.type_comment = str(type)
+        self.size = size
+        if self.size == None or self.size == "":
+            self.size = "uint8"
+        self.data = []
+        self.last_value = -1
+
+    def add_data(self, name, value, text):
+        if value == None or value == "":
+            value = self.last_value + 1
+        else :
+            value = int(value)
+        self.last_value = value
+        self.data.append(DataEnumValue(name,value,text))
+
+class DataEnumValue:
+    '''
+    Enumのデータ1個分の構造情報
+    '''
+    def __init__(self, name, value, text):
+        self.name = name
+        self.value = value
+        if text is None:
+            text = ""
+        self.text = text
 
 def load_excel( filepath ):
     '''
@@ -157,6 +193,63 @@ def analys_sheet(ws) -> DataTable:
 
     return table
 
+def export_enum_ue4_header(table: DataTable, path_setting : DataTable):
+    '''
+    Enumの出力
+    '''
+
+    enums = {}
+    for record in table.records:
+        enum_header = record.get_value("Header")
+        if enum_header == None or enum_header == "":
+            # データ登録
+            data_enum = enums[enum_type]
+            enum_name = record.get_value("Name")
+            enum_value = record.get_value("Value")
+            enum_text = record.get_value("Text")
+            data_enum.add_data(enum_name,enum_value,enum_text)
+        else:
+            enum_type = record.get_value("EnumTypeName")
+            enum_type_comment = record.get_value("EnumTypeNameComment")
+            enum_size= record.get_value("Size")
+            #print(str(enum_type) + "," + str(enum_type_comment) + "," + str(enum_size))
+            # ヘッダ登録
+            enums[enum_type] = DataEnum(enum_type, enum_type_comment, enum_size)
+                
+
+    txt_enums = ""
+    for key in enums.keys():
+        data_enum = enums[key]
+        txt_enums += get_ue4_enum_str(data_enum)
+
+    replace_map = {
+        "ENUMS":txt_enums
+    }
+
+    ue_record = path_setting.find_record("Platform", "UE")
+    output_dir = ue_record.get_value("EnumOutputPath")
+    template_file = ue_record.get_value("EnumTemplatePath")
+    output_file = output_dir + "/" + "MasterDefines" + ".h"
+    default_output_file = "output" + "/" + "MasterDefines" + ".h"
+    export_from_template(template_file, default_output_file, replace_map)
+    copy_file(default_output_file, output_file)
+
+def get_ue4_enum_str(data_enum : DataEnum):
+    '''
+    Enum1つ分のテキストを作成
+    '''
+    txt = ""
+    txt += "// " + data_enum.type_comment + LINE_STR
+    txt += "" + "UENUM(BlueprintType)" + LINE_STR
+    txt += "enum class " + data_enum.type + " :" +  data_enum.size + LINE_STR
+    txt += "{" + LINE_STR
+    for value in data_enum.data:
+        txt += "	" + value.name + " = " + str(value.value)  + "," + " // " + value.text + LINE_STR
+    txt += "};" + LINE_STR
+    txt += LINE_STR
+    return txt
+
+
 def export_csv(table : DataTable):
     '''
     DataTableをcsvに出力
@@ -206,7 +299,9 @@ def export_ue4_data_table(table : DataTable, setting : DataTable, path_setting :
     output_dir = ue_record.get_value("CodeOutputPath")
     template_file = ue_record.get_value("TemplatePath")
     output_file = output_dir + "/" + table.name + "Manager" + ".h"
-    export_from_template(template_file, output_file, replace_map)
+    default_output_file = "output" + "/" + table.name + "Manager" + ".h"
+    export_from_template(template_file, default_output_file, replace_map)
+    copy_file(default_output_file, output_file)
 
 def get_ue4_field_str(field : DataField, replace_field_map):
     '''
@@ -243,13 +338,24 @@ def export_from_template(template_file, output_file, replaceMap):
     with open(output_file,'w',encoding='UTF-8') as f:
         f.write(txt)
 
+def copy_file(input, output):
+    '''
+    ファイルコピー
+    '''
+    shutil.copyfile(input, output)
+
 def get_input_files():
     '''
     input配下のファイルを全て取得
     '''
     files = os.listdir(INPUT_DIR)
     files_file = [f for f in files if os.path.isfile(os.path.join(INPUT_DIR, f))]
-    return files_file
+    ret = []
+    for f in files_file:
+        if "~" in f:
+            continue
+        ret.append(INPUT_DIR + "/" + f)
+    return ret
 
 def main():
     print("=================" + "load setting" + " start" "=================")
@@ -262,8 +368,11 @@ def main():
         print("=================" + file_path + " start" "=================")
         tables = load_and_analys_all(file_path)
         for table in tables:
-            export_csv(table)
-            export_ue4_data_table(table, setting, path_setting)
+            if table.isEnum:
+                export_enum_ue4_header(table, path_setting)
+            else:
+                export_csv(table)
+                export_ue4_data_table(table, setting, path_setting)
         print("=================" + file_path + " end" "=================")
 
 main()

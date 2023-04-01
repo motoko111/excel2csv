@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "Master/MasterDataSubsystem.h"
+#include "Master/Data/MasterDefines.h"
 #include "${DATA_NAME}Manager.generated.h"
 
 USTRUCT(BlueprintType)
