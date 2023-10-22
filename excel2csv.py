@@ -228,6 +228,8 @@ def export_enum_ue4_header(table: DataTable, path_setting : DataTable):
 
     ue_record = path_setting.find_record("Platform", "UE")
     output_dir = ue_record.get_value("EnumOutputPath")
+    if not output_dir:
+        output_dir = OUTPUT_DIR
     template_file = ue_record.get_value("EnumTemplatePath")
     output_file = output_dir + "/" + "MasterDefines" + ".h"
     default_output_file = "output" + "/" + "MasterDefines" + ".h"
@@ -275,6 +277,31 @@ def export_csv(table : DataTable):
     with open(output_file,'w',encoding='utf_8_sig', newline="") as f:
         f.write(txt)
 
+        
+def export_lua(table : DataTable):
+    '''
+    DataTableをluaに出力
+    '''
+    TAB_STR = "	"
+    txt = ""
+    txt += "return { " + LINE_STR
+    txt += TAB_STR + "dataName = " + '"' + table.name + '"' + "," + LINE_STR
+    txt += TAB_STR + "records = {"
+    txt += LINE_STR
+    for record in table.records:
+        txt += TAB_STR + TAB_STR + "{" + LINE_STR
+        for i in range(len(table.fields)):
+            field = table.fields[i]
+            value_str = (record.get_export_str(field.name)).replace("\r\n","\n").replace("\r","\n").replace("\n","\\n")
+            txt += TAB_STR + TAB_STR + TAB_STR + field.name + " = " + value_str + "," + LINE_STR
+        txt += TAB_STR + TAB_STR + "}, " + LINE_STR
+    txt += TAB_STR + "}" + LINE_STR # end records
+    txt += "}" # end data
+    
+    output_file = OUTPUT_DIR + "/" + table.name + ".lua"
+    with open(output_file,'w',encoding='utf_8_sig', newline="") as f:
+        f.write(txt)
+
 def export_ue4_data_table(table : DataTable, setting : DataTable, path_setting : DataTable):
     '''
     DataTableをUE4のC++ファイルとして出力
@@ -297,6 +324,8 @@ def export_ue4_data_table(table : DataTable, setting : DataTable, path_setting :
 
     ue_record = path_setting.find_record("Platform", "UE")
     output_dir = ue_record.get_value("CodeOutputPath")
+    if not output_dir:
+        output_dir = OUTPUT_DIR
     template_file = ue_record.get_value("TemplatePath")
     output_file = output_dir + "/" + table.name + "Manager" + ".h"
     default_output_file = "output" + "/" + table.name + "Manager" + ".h"
@@ -323,6 +352,63 @@ def export_unity_data_table(table : DataTable):
     '''
     # TODO:
     pass
+
+def export_enum_lua(table: DataTable, path_setting : DataTable):
+    '''
+    Enumの出力
+    '''
+
+    enums = {}
+    for record in table.records:
+        enum_header = record.get_value("Header")
+        if enum_header == None or enum_header == "":
+            # データ登録
+            data_enum = enums[enum_type]
+            enum_name = record.get_value("Name")
+            enum_value = record.get_value("Value")
+            enum_text = record.get_value("Text")
+            data_enum.add_data(enum_name,enum_value,enum_text)
+        else:
+            enum_type = record.get_value("EnumTypeName")
+            enum_type_comment = record.get_value("EnumTypeNameComment")
+            enum_size= record.get_value("Size")
+            #print(str(enum_type) + "," + str(enum_type_comment) + "," + str(enum_size))
+            # ヘッダ登録
+            enums[enum_type] = DataEnum(enum_type, enum_type_comment, enum_size)
+                
+
+    txt_enums = ""
+    for key in enums.keys():
+        data_enum = enums[key]
+        txt_enums += get_lua_enum_str(data_enum)
+
+    replace_map = {
+        "ENUMS":txt_enums
+    }
+
+    ue_record = path_setting.find_record("Platform", "lua")
+    output_dir = ue_record.get_value("EnumOutputPath")
+    if not output_dir:
+        output_dir = OUTPUT_DIR
+    template_file = ue_record.get_value("EnumTemplatePath")
+    output_file = output_dir + "/" + "MasterDefines" + ".lua"
+    default_output_file = "output" + "/" + "MasterDefines" + ".lua"
+    export_from_template(template_file, default_output_file, replace_map)
+    if default_output_file != output_file:
+        copy_file(default_output_file, output_file)
+
+def get_lua_enum_str(data_enum : DataEnum):
+    '''
+    Enum1つ分のテキストを作成
+    '''
+    txt = ""
+    txt += "-- " + data_enum.type_comment + LINE_STR
+    txt += data_enum.type + " = { " + LINE_STR
+    for value in data_enum.data:
+        txt += "	" + value.name + " = " + str(value.value)  + "," + " -- " + value.text + LINE_STR
+    txt += "}" + LINE_STR
+    txt += LINE_STR
+    return txt
 
 def export_from_template(template_file, output_file, replaceMap):
     '''
@@ -367,12 +453,19 @@ def main():
     for file_path in files:
         print("=================" + file_path + " start" "=================")
         tables = load_and_analys_all(file_path)
+        # UE4
         for table in tables:
             if table.isEnum:
                 export_enum_ue4_header(table, path_setting)
             else:
                 export_csv(table)
                 export_ue4_data_table(table, setting, path_setting)
+        # lua
+        for table in tables:
+            if table.isEnum:
+                export_enum_lua(table, path_setting)
+            else:
+                export_lua(table)
         print("=================" + file_path + " end" "=================")
 
 main()
