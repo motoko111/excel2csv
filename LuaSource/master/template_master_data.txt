@@ -1,0 +1,9 @@
+local master = require("lib/master")
+local master_data = master.master_data
+local master_data_manager = master.master_data_manager
+
+local ${DATA_NAME} = {}
+
+${DATA_NAME}Manager = master_data_manager.new("${DATA_NAME}")
+
+return ${DATA_NAME}
