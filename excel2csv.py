@@ -2,6 +2,7 @@ import re
 import sys
 import os
 import openpyxl
+import json
 import shutil
 
 """
@@ -238,10 +239,12 @@ def analys_sheet(ws) -> DataTable:
 
     return table
 
-def export_enum_ue4_header(table: DataTable, path_setting : DataTable):
+def export_enum_ue4_header(table: DataTable, setting : dict):
     '''
     Enumの出力
     '''
+
+    path_setting = setting["UE"]["path"]
 
     enums = {}
     for record in table.records:
@@ -271,15 +274,13 @@ def export_enum_ue4_header(table: DataTable, path_setting : DataTable):
         "ENUMS":txt_enums
     }
 
-    ue_record = path_setting.find_record("Platform", "UE")
-    output_dir = ue_record.get_value("EnumOutputPath")
+    output_dir = path_setting["EnumOutputPath"]
     if not output_dir:
         output_dir = OUTPUT_DIR
-    template_file = ue_record.get_value("EnumTemplatePath")
+    os.makedirs(output_dir, exist_ok=True)
+    template_file = path_setting["EnumTemplatePath"]
     output_file = output_dir + "/" + "MasterDefines" + ".h"
-    default_output_file = "output" + "/" + "MasterDefines" + ".h"
-    export_from_template(template_file, default_output_file, replace_map)
-    copy_file(default_output_file, output_file)
+    export_from_template(template_file, output_file, replace_map)
 
 def get_ue4_enum_str(data_enum : DataEnum):
     '''
@@ -296,10 +297,12 @@ def get_ue4_enum_str(data_enum : DataEnum):
     txt += LINE_STR
     return txt
 
-def export_enum_godot_header(table: DataTable, path_setting : DataTable):
+def export_enum_godot_header(table: DataTable, setting : dict):
     '''
     Enumの出力
     '''
+
+    path_setting = setting["Godot"]["path"]
 
     enums = {}
     for record in table.records:
@@ -329,15 +332,13 @@ def export_enum_godot_header(table: DataTable, path_setting : DataTable):
         "ENUMS":txt_enums
     }
 
-    ue_record = path_setting.find_record("Platform", "Godot")
-    output_dir = ue_record.get_value("EnumOutputPath")
+    output_dir = path_setting["EnumOutputPath"]
     if not output_dir:
         output_dir = OUTPUT_DIR
-    template_file = ue_record.get_value("EnumTemplatePath")
+    os.makedirs(output_dir, exist_ok=True)
+    template_file = path_setting["EnumTemplatePath"]
     output_file = output_dir + "/" + "MasterDefines" + ".gd"
-    default_output_file = "output" + "/" + "MasterDefines" + ".gd"
-    export_from_template(template_file, default_output_file, replace_map)
-    copy_file(default_output_file, output_file)
+    export_from_template(template_file, output_file, replace_map)
 
 def get_godot_enum_str(data_enum : DataEnum):
     '''
@@ -348,16 +349,19 @@ def get_godot_enum_str(data_enum : DataEnum):
     txt += "enum " + data_enum.type + LINE_STR
     txt += "{" + LINE_STR
     for value in data_enum.data:
-        txt += "	" + value.name + " = " + str(value.value)  + "," + " # " + value.text + LINE_STR
+        txt += "	" + value.name + " = " + str(value.value)  + "," + " ## " + value.text + LINE_STR
     txt += "}" + LINE_STR
     txt += LINE_STR
     return txt
 
 
-def export_csv(table : DataTable):
+def export_csv(table : DataTable, setting : dict):
     '''
     DataTableをcsvに出力
     '''
+
+    path_setting = setting["csv"]["path"]
+
     txt = ""
     for i in range(len(table.fields)):
         field = table.fields[i]
@@ -375,15 +379,22 @@ def export_csv(table : DataTable):
             #print(u"レコード追加:" + str(field.name) + "," + str(field.type) + "," + value_str)
         txt += LINE_STR
     
-    output_file = OUTPUT_DIR + "/csv/" + table.name + ".csv"
+    output_dir = path_setting["DataOutputPath"]
+    if not(output_dir):
+        output_dir = OUTPUT_DIR + "/csv"
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = output_dir + "/" + table.name + ".csv"
     with open(output_file,'w',encoding='utf_8_sig', newline="") as f:
         f.write(txt)
 
         
-def export_lua(table : DataTable):
+def export_lua(table : DataTable, setting : dict):
     '''
     DataTableをluaに出力
     '''
+
+    path_setting = setting["Lua"]["path"]
+
     TAB_STR = "	"
     txt = ""
     txt += "return { " + LINE_STR
@@ -409,14 +420,21 @@ def export_lua(table : DataTable):
     txt += TAB_STR + "}" + LINE_STR # end records
     txt += "}" # end data
     
-    output_file = OUTPUT_DIR + "/lua/" + table.name + ".lua"
+    output_dir = path_setting["DataOutputPath"]
+    if not(output_dir):
+        output_dir = OUTPUT_DIR + "/lua"
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = output_dir + "/" + table.name + ".lua"
     with open(output_file,'w',encoding='utf_8', newline="") as f:
         f.write(txt)
 
-def export_godot_dic(table : DataTable):
+def export_godot_dic(table : DataTable, setting : dict):
     '''
     DataTableをgdscriptに出力
     '''
+
+    path_setting = setting["Godot"]["path"]
+
     template = """
 class_name ${DATA_NAME}Manager
 extends MasterDataManager
@@ -458,18 +476,25 @@ ${RECORDS}
 
     txt = template.replace("${DATA_NAME}", table.name).replace("${FIELDS}", fields_txt).replace("${RECORDS}", records_txt)
     
-    output_file = OUTPUT_DIR + "/godot_dic/" + table.name + ".gd"
+    output_dir = path_setting["DataOutputPath"]
+    if not(output_dir):
+        output_dir = OUTPUT_DIR + "/godot_dic"
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = output_dir + "/" + table.name + ".gd"
     with open(output_file,'w',encoding='utf_8', newline="") as f:
         f.write(txt)
 
-def export_ue4_data_table(table : DataTable, setting : DataTable, path_setting : DataTable):
+def export_ue4_data_table(table : DataTable, setting : dict):
     '''
     DataTableをUE4のC++ファイルとして出力
     '''
+    field_setting = setting["UE"]["fields"]
+    path_setting = setting["UE"]["path"]
+
     replace_field_map = {}
-    for record in setting.records:
-        type_str = record.get_value("Type")
-        code_type_str = record.get_value("CodeTypeName_UE")
+    for key in field_setting:
+        type_str = key
+        code_type_str = field_setting[key]
         replace_field_map[type_str] = code_type_str
 
     txt_fields = ""
@@ -482,15 +507,13 @@ def export_ue4_data_table(table : DataTable, setting : DataTable, path_setting :
         "FIELDS":txt_fields
     }
 
-    ue_record = path_setting.find_record("Platform", "UE")
-    output_dir = ue_record.get_value("CodeOutputPath")
+    output_dir = path_setting["CodeOutputPath"]
     if not output_dir:
         output_dir = OUTPUT_DIR
-    template_file = ue_record.get_value("TemplatePath")
+    os.makedirs(output_dir, exist_ok=True)
+    template_file = path_setting["TemplatePath"]
     output_file = output_dir + "/" + table.name + "Manager" + ".h"
-    default_output_file = "output" + "/" + table.name + "Manager" + ".h"
-    export_from_template(template_file, default_output_file, replace_map)
-    copy_file(default_output_file, output_file)
+    export_from_template(template_file, output_file, replace_map)
 
 def get_ue4_field_str(field : DataField, replace_field_map):
     '''
@@ -513,15 +536,22 @@ def export_unity_data_table(table : DataTable):
     # TODO:
     pass
 
-def export_godot_data_table(table : DataTable, setting : DataTable, path_setting : DataTable):
+def export_godot_data_table(table : DataTable, setting : dict):
     '''
     DataTableをGodotのGDScriptファイルとして出力
     '''
+    field_setting = setting["Godot"]["fields"]
+    path_setting = setting["Godot"]["path"]
     replace_field_map = {}
-    for record in setting.records:
-        type_str = record.get_value("Type")
-        code_type_str = record.get_value("CodeTypeName_Godot")
+    for key in field_setting:
+        type_str = key
+        code_type_str = field_setting[key]
         replace_field_map[type_str] = code_type_str
+
+    #for record in setting.records:
+    #    type_str = record.get_value("Type")
+    #    code_type_str = record.get_value("CodeTypeName_Godot")
+    #    replace_field_map[type_str] = code_type_str
 
     txt_fields = ""
     for i in range(len(table.fields)):
@@ -533,15 +563,13 @@ def export_godot_data_table(table : DataTable, setting : DataTable, path_setting
         "FIELDS":txt_fields
     }
 
-    ue_record = path_setting.find_record("Platform", "Godot")
-    output_dir = ue_record.get_value("CodeOutputPath")
+    output_dir = path_setting["CodeOutputPath"]
     if not output_dir:
         output_dir = OUTPUT_DIR
-    template_file = ue_record.get_value("TemplatePath")
+    os.makedirs(output_dir, exist_ok=True)
+    template_file = path_setting["TemplatePath"]
     output_file = output_dir + "/" + table.name + "Manager" + ".gd"
-    default_output_file = "output" + "/godot/" + table.name + "Manager" + ".gd"
-    export_from_template(template_file, default_output_file, replace_map)
-    copy_file(default_output_file, output_file)
+    export_from_template(template_file, output_file, replace_map)
 
 def get_godot_field_str(field : DataField, replace_field_map):
     '''
@@ -559,10 +587,12 @@ def get_godot_field_str(field : DataField, replace_field_map):
     txt += LINE_STR
     return txt
 
-def export_enum_lua(table: DataTable, path_setting : DataTable):
+def export_enum_lua(table: DataTable, setting : dict):
     '''
     Enumの出力
     '''
+
+    path_setting = setting["Lua"]["path"]
 
     enums = {}
     for record in table.records:
@@ -592,16 +622,13 @@ def export_enum_lua(table: DataTable, path_setting : DataTable):
         "ENUMS":txt_enums
     }
 
-    ue_record = path_setting.find_record("Platform", "lua")
-    output_dir = ue_record.get_value("EnumOutputPath")
+    output_dir = path_setting["EnumOutputPath"]
     if not output_dir:
         output_dir = OUTPUT_DIR
-    template_file = ue_record.get_value("EnumTemplatePath")
+    os.makedirs(output_dir, exist_ok=True)
+    template_file = path_setting["EnumTemplatePath"]
     output_file = output_dir + "/" + "MasterDefines" + ".lua"
-    default_output_file = "output" + "/" + "MasterDefines" + ".lua"
-    export_from_template(template_file, default_output_file, replace_map)
-    if default_output_file != output_file:
-        copy_file(default_output_file, output_file)
+    export_from_template(template_file, output_file, replace_map)
 
 def get_lua_enum_str(data_enum : DataEnum):
     '''
@@ -649,10 +676,18 @@ def get_input_files():
         ret.append(INPUT_DIR + "/" + f)
     return ret
 
+def load_setting(path):
+    '''
+    Settingファイルの読み込み
+    '''
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data
+
 def main():
     print("=================" + "load setting" + " start" "=================")
-    setting = load_and_analys("Setting.xlsx", "Setting")
-    path_setting = load_and_analys("Setting.xlsx", "PathSetting")
+    setting = load_setting("setting.json")
+    print(str(setting))
     print("=================" + "load setting" + " end" "=================")
 
     files = get_input_files()
@@ -662,26 +697,46 @@ def main():
             continue
         tables = load_and_analys_all(file_path)
         # UE4
-        for table in tables:
-            if table.isEnum:
-                export_enum_ue4_header(table, path_setting)
-            else:
-                export_csv(table)
-                export_ue4_data_table(table, setting, path_setting)
+        if setting["UE"]["enable"]:
+            output_csv = setting["UE"]["enable_csv"]
+            output_enum = setting["UE"]["enable_enum"]
+            output_code = setting["UE"]["enable_code"]
+            for table in tables:
+                if table.isEnum:
+                    if output_enum:
+                        export_enum_ue4_header(table, setting)
+                else:
+                    if output_csv:
+                        export_csv(table, setting)
+                    if output_code:
+                        export_ue4_data_table(table, setting)
         # lua
-        for table in tables:
-            if table.isEnum:
-                export_enum_lua(table, path_setting)
-            else:
-                export_lua(table)
+        if setting["Lua"]["enable"]:
+            output_enum = setting["Lua"]["enable_enum"]
+            output_data = setting["Lua"]["enable_data"]
+            for table in tables:
+                if table.isEnum:
+                    if output_enum:
+                        export_enum_lua(table, setting)
+                else:
+                    if output_data:
+                        export_lua(table, setting)
         # godot
-        for table in tables:
-            if table.isEnum:
-                export_enum_godot_header(table, path_setting)
-            else:
-                export_csv(table)
-                export_godot_dic(table)
-                export_godot_data_table(table, setting, path_setting)
+        if setting["Godot"]["enable"]:
+            output_csv = setting["Godot"]["enable_csv"]
+            output_enum = setting["Godot"]["enable_enum"]
+            output_data = setting["Godot"]["enable_data"]
+            output_code = setting["Godot"]["enable_code"]
+            for table in tables:
+                if table.isEnum:
+                    export_enum_godot_header(table, setting)
+                else:
+                    if output_csv:
+                        export_csv(table, setting)
+                    if output_data:
+                        export_godot_dic(table, setting)
+                    if output_code:
+                        export_godot_data_table(table, setting)
 
         print("=================" + file_path + " end" "=================")
 
