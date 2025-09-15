@@ -1,85 +1,85 @@
 {
   "UE": {
-    "enable": false,
-    "enable_csv": true,
-    "enable_enum": true,
-    "enable_code": true,
-    "fields" : {
-        "int": "int",
-        "string": "FString",
-        "float": "float",
-        "double": "double",
-        "id": "FName",
-        "bool": "bool"
-    },
-    "path" : {
-        "DataOutputPath": "output/csv",
-        "CodeOutputPath": "output/UE",
-        "EnumOutputPath": "output/UE",
-        "TemplatePath": "platform/UE/Template_UE4DataTable.h",
-        "EnumTemplatePath": "platform/UE/Template_UE4Defines.h"
-    }
+	"enable": false,
+	"enable_csv": true,
+	"enable_enum": true,
+	"enable_code": true,
+	"fields" : {
+		"int": "int",
+		"string": "FString",
+		"float": "float",
+		"double": "double",
+		"id": "FName",
+		"bool": "bool"
+	},
+	"path" : {
+		"DataOutputPath": "csv",
+		"CodeOutputPath": "UE",
+		"EnumOutputPath": "UE",
+		"TemplatePath": "platform/UE/Template_UE4DataTable.h",
+		"EnumTemplatePath": "platform/UE/Template_UE4Defines.h"
+	}
   },
   "Unity": {
-    "enable": false,
-    "enable_csv": true,
-    "enable_enum": true,
-    "enable_code": true,
-    "fields" : {
-        "int": "System.Int32",
-        "string": "System.String",
-        "float": "System.Single",
-        "double": "System.Double",
-        "id": "System.String",
-        "bool": "System.Boolean"
-    },
-    "path" : {
-        "DataOutputPath": "output/csv",
-        "CodeOutputPath": "output/unity",
-        "EnumOutputPath": "output/unity",
-        "TemplatePath": "",
-        "EnumTemplatePath": ""
-    }
+	"enable": false,
+	"enable_csv": true,
+	"enable_enum": true,
+	"enable_code": true,
+	"fields" : {
+		"int": "System.Int32",
+		"string": "System.String",
+		"float": "System.Single",
+		"double": "System.Double",
+		"id": "System.String",
+		"bool": "System.Boolean"
+	},
+	"path" : {
+		"DataOutputPath": "csv",
+		"CodeOutputPath": "unity",
+		"EnumOutputPath": "unity",
+		"TemplatePath": "",
+		"EnumTemplatePath": ""
+	}
   },
   "Lua": {
-    "enable": false,
-    "enable_enum": true,
-    "enable_data": true,
-    "fields" : {
-    },
-    "path" : {
-        "DataOutputPath": "output/lua",
-        "CodeOutputPath": "output/lua",
-        "EnumOutputPath": "output/lua",
-        "TemplatePath": "",
-        "EnumTemplatePath": "platform/lua/Template_LuaDefines.lua"
-    }
+	"enable": false,
+	"enable_enum": true,
+	"enable_data": true,
+	"fields" : {
+	},
+	"path" : {
+		"DataOutputPath": "lua",
+		"CodeOutputPath": "lua",
+		"EnumOutputPath": "lua",
+		"TemplatePath": "",
+		"EnumTemplatePath": "platform/lua/Template_LuaDefines.lua"
+	}
   },
   "Godot": {
-    "enable": true,
-    "enable_csv": false,
-    "enable_enum": true,
-    "enable_data": true,
-    "enable_code": false,
-    "fields" : {
-        "int": "int",
-        "string": "String",
-        "float": "float",
-        "double": "double",
-        "id": "int",
-        "bool": "bool"
-    },
-    "path" : {
-        "DataOutputPath": "output/godot_dic",
-        "CodeOutputPath": "output/godot",
-        "EnumOutputPath": "output/godot",
-        "TemplatePath": "platform/godot/Template_GodotDataTable.gd",
-        "EnumTemplatePath": "platform/godot/Template_GodotDefines.gd"
-    }
+	"enable": true,
+	"enable_csv": false,
+	"enable_enum": true,
+	"enable_data": true,
+	"enable_code": false,
+	"fields" : {
+		"int": "int",
+		"string": "String",
+		"float": "float",
+		"double": "double",
+		"id": "int",
+		"bool": "bool"
+	},
+	"path" : {
+		"DataOutputPath": "",
+		"CodeOutputPath": "godot",
+		"EnumOutputPath": "godot",
+		"TemplatePath": "platform/godot/Template_GodotDataTable.txt",
+		"EnumTemplatePath": "platform/godot/Template_GodotDefines.txt"
+	}
   },
   "csv": {
-    "path" : {
-        "DataOutputPath": "output/csv"
-    }
+	"path" : {
+		"DataOutputPath": "csv"
+	}
   }
 }

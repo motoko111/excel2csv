@@ -276,7 +276,8 @@ def export_enum_ue4_header(table: DataTable, setting : dict):
 
     output_dir = path_setting["EnumOutputPath"]
     if not output_dir:
-        output_dir = OUTPUT_DIR
+        output_dir = ""
+    output_dir = OUTPUT_DIR + "/" + output_dir
     os.makedirs(output_dir, exist_ok=True)
     template_file = path_setting["EnumTemplatePath"]
     output_file = output_dir + "/" + "MasterDefines" + ".h"
@@ -334,7 +335,8 @@ def export_enum_godot_header(table: DataTable, setting : dict):
 
     output_dir = path_setting["EnumOutputPath"]
     if not output_dir:
-        output_dir = OUTPUT_DIR
+        output_dir = ""
+    output_dir = OUTPUT_DIR + "/" + output_dir
     os.makedirs(output_dir, exist_ok=True)
     template_file = path_setting["EnumTemplatePath"]
     output_file = output_dir + "/" + "MasterDefines" + ".gd"
@@ -380,8 +382,9 @@ def export_csv(table : DataTable, setting : dict):
         txt += LINE_STR
     
     output_dir = path_setting["DataOutputPath"]
-    if not(output_dir):
-        output_dir = OUTPUT_DIR + "/csv"
+    if not output_dir:
+        output_dir = ""
+    output_dir = OUTPUT_DIR + "/" + output_dir
     os.makedirs(output_dir, exist_ok=True)
     output_file = output_dir + "/" + table.name + ".csv"
     with open(output_file,'w',encoding='utf_8_sig', newline="") as f:
@@ -421,8 +424,9 @@ def export_lua(table : DataTable, setting : dict):
     txt += "}" # end data
     
     output_dir = path_setting["DataOutputPath"]
-    if not(output_dir):
-        output_dir = OUTPUT_DIR + "/lua"
+    if not output_dir:
+        output_dir = ""
+    output_dir = OUTPUT_DIR + "/" + output_dir
     os.makedirs(output_dir, exist_ok=True)
     output_file = output_dir + "/" + table.name + ".lua"
     with open(output_file,'w',encoding='utf_8', newline="") as f:
@@ -477,8 +481,9 @@ ${RECORDS}
     txt = template.replace("${DATA_NAME}", table.name).replace("${FIELDS}", fields_txt).replace("${RECORDS}", records_txt)
     
     output_dir = path_setting["DataOutputPath"]
-    if not(output_dir):
-        output_dir = OUTPUT_DIR + "/godot_dic"
+    if not output_dir:
+        output_dir = ""
+    output_dir = OUTPUT_DIR + "/" + output_dir
     os.makedirs(output_dir, exist_ok=True)
     output_file = output_dir + "/" + table.name + ".gd"
     with open(output_file,'w',encoding='utf_8', newline="") as f:
@@ -509,7 +514,8 @@ def export_ue4_data_table(table : DataTable, setting : dict):
 
     output_dir = path_setting["CodeOutputPath"]
     if not output_dir:
-        output_dir = OUTPUT_DIR
+        output_dir = ""
+    output_dir = OUTPUT_DIR + "/" + output_dir
     os.makedirs(output_dir, exist_ok=True)
     template_file = path_setting["TemplatePath"]
     output_file = output_dir + "/" + table.name + "Manager" + ".h"
@@ -565,7 +571,8 @@ def export_godot_data_table(table : DataTable, setting : dict):
 
     output_dir = path_setting["CodeOutputPath"]
     if not output_dir:
-        output_dir = OUTPUT_DIR
+        output_dir = ""
+    output_dir = OUTPUT_DIR + "/" + output_dir
     os.makedirs(output_dir, exist_ok=True)
     template_file = path_setting["TemplatePath"]
     output_file = output_dir + "/" + table.name + "Manager" + ".gd"
@@ -624,7 +631,8 @@ def export_enum_lua(table: DataTable, setting : dict):
 
     output_dir = path_setting["EnumOutputPath"]
     if not output_dir:
-        output_dir = OUTPUT_DIR
+        output_dir = ""
+    output_dir = OUTPUT_DIR + "/" + output_dir
     os.makedirs(output_dir, exist_ok=True)
     template_file = path_setting["EnumTemplatePath"]
     output_file = output_dir + "/" + "MasterDefines" + ".lua"
